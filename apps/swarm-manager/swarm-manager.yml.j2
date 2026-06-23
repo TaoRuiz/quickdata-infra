@@ -1,0 +1,62 @@
+networks:
+  private_network:
+    driver: overlay
+
+services:
+  nocodb:
+    image: nocodb/nocodb:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - private_network
+    environment:
+      NC_DB: ${NC_DB}
+      NC_AUTH_JWT_SECRET: b7e8c1f4e6a94b7fa8d7c2a1e9d3f6c8a4b2d9e7f1c6a8b3d5e2f9a7c4b6d1e8
+    volumes:
+      - /srv/nocodb/data:/usr/app/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.worker_type == webapp
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    networks:
+      - private_network
+    deploy:
+      mode: global
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    networks:
+      - private_network
+    volumes:
+      - /srv/prometheus/data:/prometheus
+      - /srv/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.worker_type == monitoring
+
+  grafana:
+    image: grafana/grafana:13.0.0-22696220628-ubuntu
+    ports:
+      - "3000:3000"
+    networks:
+      - private_network
+    volumes:
+      - /srv/grafana/data:/var/lib/grafana
+    environment:
+      GF_SERVER_ROOT_URL: "http://grafana.devops-homelab.site"
+      GF_SERVER_DOMAIN: "grafana.devops-homelab.site"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.worker_type == monitoring

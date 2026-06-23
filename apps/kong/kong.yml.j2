@@ -1,0 +1,29 @@
+_format_version: "3.0"
+
+services:
+  - name: nocodb-service
+    url: http://{{ hostvars[groups['role_swarm_manager'][0]]['private_ip_address'] }}:8080
+    routes:
+      - name: nocodb-route
+        hosts:
+          - {{ domains.nocodb }}
+
+  - name: grafana-service
+    url: http://{{ hostvars[groups['role_swarm_manager'][0]]['private_ip_address'] }}:3000
+    routes:
+      - name: grafana-route
+        hosts:
+          - {{ domains.grafana }}
+
+    plugins:
+      - name: request-transformer
+        config:
+          replace:
+            headers:
+              - "Host:{{ domains.grafana }}"
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 1000
+      policy: local

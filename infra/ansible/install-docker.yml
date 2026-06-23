@@ -1,0 +1,18 @@
+- name: Installation de docker sur les machines et nodes
+  hosts: require_docker_true
+  become: yes
+  tasks:
+    - name: Installer Docker et SDK Python
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - python3-docker
+        update_cache: yes
+        state: present
+
+    - name: Ajouter ubuntu au groupe docker
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes

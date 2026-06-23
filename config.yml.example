@@ -1,0 +1,7 @@
+domains:
+  nocodb: "<nom>.<env>.nocodb.devops-homelab.site"
+  grafana: "<nom>.<env>.grafana.devops-homelab.site"
+
+cloudflare:
+  zone_id: "<zone>"
+  token: "<token>"

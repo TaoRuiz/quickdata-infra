@@ -1,0 +1,15 @@
+---
+- name : Installation de docker sur les machines
+  import_playbook: install-docker.yml
+
+- name: Configuration API Gateway (Kong)
+  import_playbook: kong-deploy.yml
+
+- name : Création de l'arborescence (monitoring workers)
+  import_playbook: setup-monitoring-workers.yml
+
+- name : Création de l'arborescence (webapp workers)
+  import_playbook: setup-webapp-workers.yml
+
+- name: Déploiement du Manager Swarm
+  import_playbook: swarm-deploy.yml

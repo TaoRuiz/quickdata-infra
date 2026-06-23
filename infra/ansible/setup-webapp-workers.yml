@@ -1,0 +1,10 @@
+---
+- name: Créer le dossier pour nocodb
+  hosts: worker_type_webapp
+  become: yes
+  tasks:
+    - name: Dossiers Nocodb
+      file:
+        path: /srv/nocodb/data
+        state: directory
+        mode: '0755'

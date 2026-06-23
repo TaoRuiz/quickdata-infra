@@ -1,0 +1,11 @@
+services:
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    volumes:
+      - ./config/gitlab-runner:/etc/gitlab-runner # sauvegarde de la config
+      - /var/run/docker.sock:/var/run/docker.sock # donne l'accès à l'executor docker
+
+networks:
+  ci-network:

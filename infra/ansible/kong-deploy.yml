@@ -1,0 +1,27 @@
+---
+- name: Déploiement de l'API Gateway (Kong)
+  hosts: ['role_kong']
+  vars_files:
+    - ../../config.yml
+  become: yes
+  tasks:
+    - name: Création du répertoire Kong
+      ansible.builtin.file:
+        path: /srv/kong
+        state: directory
+        mode: '0755'
+    - name: Génération de la configuration Kong (Injection IP dynamique)
+      ansible.builtin.template:
+        src: ../../apps/kong/kong.yml.j2
+        dest: /srv/kong/kong.yml
+        mode: '0644'
+    - name: Copie du docker-compose
+      ansible.builtin.copy:
+        src: ../../apps/kong/docker-compose.yml
+        dest: /srv/kong/docker-compose.yml
+        mode: '0644'
+    - name: Lancement de la stack avec Docker Compose V2
+      community.docker.docker_compose_v2:
+        project_src: /srv/kong
+        state: present
+        recreate: always

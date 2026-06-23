@@ -1,0 +1,14 @@
+services:
+  kong:
+    container_name: quickdata-gateway
+    image: kong:latest
+    user: "0"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:80
+    volumes:
+      - ./kong.yml:/etc/kong/kong.yml
+    ports:
+      - "80:80"
+    restart: unless-stopped

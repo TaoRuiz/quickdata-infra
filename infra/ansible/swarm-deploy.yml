@@ -1,0 +1,74 @@
+---
+- name: Initialisation du Swarm Manager
+  hosts: [ 'role_swarm_manager' ]
+  become: yes
+  tasks:
+    - name: Init du cluster Swarm
+      community.docker.docker_swarm:
+        state: present
+      register: swarm_info
+
+    - name: Récupération de token worker
+      command: docker swarm join-token -q worker
+      register: worker_token
+      changed_when: false
+
+    - name: Partage du token et de l'IP du manager
+      set_fact:
+        swarm_worker_token: "{{ worker_token.stdout }}"
+        swarm_manager_ip: "{{ ansible_default_ipv4.address }}"
+
+- name: Ajout des workers au cluster
+  hosts: role_worker
+  become: yes
+  tasks:
+    - name: Inscription dans le cluster
+      community.docker.docker_swarm:
+        state: join
+        join_token: "{{ hostvars[groups['role_swarm_manager'][0]].swarm_worker_token }}"
+        remote_addrs:
+          - "{{ hostvars[groups['role_swarm_manager'][0]].swarm_manager_ip }}:2377"
+
+- name: Application des labels sur les noeuds
+  hosts: role_swarm_manager
+  become: yes
+  tasks:
+    - name: Label workers
+      command: >
+        docker node update --label-add worker_type={{ hostvars[item]['tags']['WorkerType'] | lower }}
+        {{ hostvars[item].ansible_hostname }}
+      loop: "{{ groups['role_worker'] }}"
+
+- name: Déploiement de la stack Swarm
+  hosts: role_swarm_manager
+  become: yes
+  vars_files:
+    - ../../config.yml
+  tasks:
+    - name: Création du répertoire source
+      ansible.builtin.file:
+        path: "/srv"
+        state: directory
+        mode: '0755'
+    - name: Génération fichier de config de la stack
+      ansible.builtin.template:
+        src: ../../apps/swarm-manager/swarm-manager.yml.j2
+        dest: "/srv/swarm-manager.yml"
+        mode: '0644'
+    - name: Récupérer l'endpoint RDS depuis Terraform
+      args:
+        chdir: "../terraform/"
+      command: terraform output -raw rds_endpoint
+      delegate_to: localhost
+      become: false
+      register: rds_endpoint
+      changed_when: false
+    - name: Générer le .env avec l'endpoint RDS
+      ansible.builtin.copy:
+        dest: "/srv/.env"
+        mode: '0600'
+        content: |
+          NC_DB=pg://{{ rds_endpoint.stdout }}?u=nocodb_user&p={{ lookup('env', 'TF_VAR_db_password') }}&d=nocodb_database
+    - name: Lancement de la stack
+      ansible.builtin.command:
+        cmd: docker stack deploy -c /srv/swarm-manager.yml quickdata

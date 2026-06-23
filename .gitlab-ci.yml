@@ -1,0 +1,12 @@
+stages:
+  - verify
+
+check-runner:
+  stage: verify
+  image: docker:latest
+  script:
+    - echo "Runner sur $(hostname)"
+    - echo "Docker accessible ?"
+    - docker info || echo "Docker non accessible depuis ce job"
+  tags:
+    - runner-on-vps

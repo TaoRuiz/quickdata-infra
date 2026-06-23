@@ -1,0 +1,31 @@
+---
+- name: Créer les dossiers monitoring
+  hosts: worker_type_monitoring
+  become: yes
+  tasks:
+    - name: Dossiers Prometheus et Grafana
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /srv/prometheus/data
+        - /srv/grafana/data
+
+    - name: Permissions Grafana
+      file:
+        path: /srv/grafana/data
+        owner: '472'
+        group: '472'
+
+    - name: Permissions Prometheus
+      file:
+        path: /srv/prometheus/data
+        owner: '65534'
+        group: '65534'
+
+    - name: Copier la configuration de prometheus
+      ansible.builtin.template:
+        src: ../../apps/prometheus/prometheus.yml.j2
+        dest: /srv/prometheus/prometheus.yml
+        mode: '0644'
